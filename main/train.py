@@ -114,6 +114,13 @@ model = Convolucao.build(64, 64, 3, CLASS)
 model.compile(optimizer=SGD(0.01), loss="categorical_crossentropy",
               metrics=["accuracy"])
 
+'''
+By setting verbose 0, 1 or 2 you just say how do you want to 'see' the training progress for each epoch.
+
+verbose=0 will show you nothing (silent)
+verbose=1 will show you an animated progress bar
+verbose=2 will just mention the number of epoch
+'''
 # treinar a CNN
 print("[INFO] Treinando a CNN...")
 classifier = model.fit_generator(
@@ -126,15 +133,6 @@ classifier = model.fit_generator(
         validation_data = test_set,
         validation_steps= (test_set.n // test_set.batch_size),
         #shuffle = False,
-        '''
-        By setting verbose 0, 1 or 2 you just say how do you want to 'see' the training progress for each epoch.
-
-        verbose=0 will show you nothing (silent)
-
-        verbose=1 will show you an animated progress bar
-
-        verbose=2 will just mention the number of epoch
-        '''
         verbose=2,
         callbacks = [early_stopping_monitor]
       )
