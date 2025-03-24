@@ -1,5 +1,0 @@
-temp/*.png
-main/cnn/__pycache__
-models/
-virtual/
-*.yml
