@@ -12,7 +12,7 @@ dir_img_test = './pre_processed/test/'
 
 cap = cv2.VideoCapture(0)
 
-def get_next_index(directory):
+def get_next_image_index(directory):
     existing_files = [f for f in os.listdir(directory) if f.endswith('.jpg')]
 
     if not existing_files:
@@ -43,8 +43,8 @@ def capture_images(letter):
         if cv2.waitKey(5) == ord('s'):
             break
 
-    train_index = get_next_index(class_dir_train)
-    test_index = get_next_index(class_dir_test)
+    train_index = get_next_image_index(class_dir_train)
+    test_index = get_next_image_index(class_dir_test)
 
     count = 0
 
