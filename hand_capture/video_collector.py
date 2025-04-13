@@ -3,34 +3,25 @@
 # =============================
 
 # Built-in modules
-import os
 import config as cfg
+import os
 
 # Third-Party Modules
 import cv2
 import mediapipe as mp
 import numpy as np
 
-
 # =============================
 # Global Settings
 # =============================
 
-mp_holistic = mp.solutions.holistic
-mp_drawing = mp.solutions.drawing_utils
-
-path_video_train = './pre_processed/train/'
-path_video_test = './pre_processed/test/'
-
-dinamic_letters = ['H', 'J', 'X', 'Y', 'Z']
+mp_holistic = mp.solutions.holistic     # type: ignore
+mp_drawing = mp.solutions.drawing_utils # type: ignore
 
 train_video_sequence = 30
 test_video_sequence = 6
-frame_sequence = 30
-# start_folder = 30
 
-actions = np.array(dinamic_letters)
-
+actions = np.array(cfg.dinamic_letters)
 
 # =============================
 # Functions
@@ -79,8 +70,8 @@ def extract_keypoints(results):
 
 
 def create_video_folder(letter):
-    video_folder_train = os.path.join(path_video_train, letter)
-    video_folder_test = os.path.join(path_video_test, letter)
+    video_folder_train = os.path.join(cfg.path_data_train, letter)
+    video_folder_test = os.path.join(cfg.path_data_test, letter)
 
     os.makedirs(video_folder_train, exist_ok=True)
     os.makedirs(video_folder_test, exist_ok=True)
@@ -107,7 +98,7 @@ def collect_video_data(letter):
 
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         for sequence in range(1, train_video_sequence + 1):
-            for frame_num in range(frame_sequence):
+            for frame_num in range(cfg.frame_sequence):
                 ret, frame = cap.read()
                 image, results = detection_mediapipe(frame, holistic)
                 draw_styled_landmarks(image, results)
@@ -125,13 +116,13 @@ def collect_video_data(letter):
                     cv2.imshow('OpenCV Feed', image)
 
                 keypoints = extract_keypoints(results)
-                np.save(os.path.join(path_video_train, letter, str(sequence), str(frame_num)), keypoints)
+                np.save(os.path.join(cfg.path_data_train, letter, str(sequence), str(frame_num)), keypoints)
 
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
 
         for sequence in range(1, test_video_sequence + 1):
-            for frame_num in range(frame_sequence):
+            for frame_num in range(cfg.frame_sequence):
                 ret, frame = cap.read()
                 image, results = detection_mediapipe(frame, holistic)
                 draw_styled_landmarks(image, results)
@@ -149,7 +140,7 @@ def collect_video_data(letter):
                     cv2.imshow('OpenCV Feed', image)
 
                 keypoints = extract_keypoints(results)
-                np.save(os.path.join(path_video_test, letter, str(sequence), str(frame_num)), keypoints)
+                np.save(os.path.join(cfg.path_data_test, letter, str(sequence), str(frame_num)), keypoints)
 
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
@@ -165,15 +156,15 @@ if __name__ == "__main__":
     caption_mode = input('Digite 1 para escolher uma letra ou 2 para capturar todas automaticamente: ')
 
     if caption_mode == '1':
-        letter = input(f'Escolha uma letra dentre {dinamic_letters}: ').upper()
-        if letter in dinamic_letters:
+        letter = input(f'Escolha uma letra dentre {cfg.dinamic_letters}: ').upper()
+        if letter in cfg.dinamic_letters:
             create_video_folder(letter)
             collect_video_data(letter)
         else:
             print('Letra inválida.')
 
     elif caption_mode == '2':
-        for letter in dinamic_letters:
+        for letter in cfg.dinamic_letters:
             create_video_folder(letter)
             collect_video_data(letter)
     else:
