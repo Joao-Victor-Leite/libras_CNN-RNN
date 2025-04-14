@@ -3,13 +3,16 @@
 # =============================
 
 # Built-in modules
-import config as cfg
+import sys
 import os
 
 # Third-Party Modules
 import cv2
 import mediapipe as mp
 import numpy as np
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config as cfg
 
 # =============================
 # Global Settings
