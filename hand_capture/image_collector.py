@@ -1,100 +1,146 @@
-import cv2
+# =============================
+# Imports
+# =============================
+
+# Built-in modules
+import sys
 import os
-import string
 
-image_x, image_y = 64, 64
-dataset_train_size = 800
-dataset_test_size = 200
-dataset_size = dataset_train_size + dataset_test_size
+# Third-Party Modules
+import cv2
+import mediapipe as mp
+import numpy as np
 
-dir_img_train = './pre_processed/train/'
-dir_img_test = './pre_processed/test/'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config as cfg
 
-cap = cv2.VideoCapture(0)
+# =============================
+# Global Settings
+# =============================
 
-def get_next_image_index(directory):
-    existing_files = [f for f in os.listdir(directory) if f.endswith('.jpg')]
 
-    if not existing_files:
+mp_holistic = mp.solutions.holistic     # type: ignore
+mp_drawing = mp.solutions.drawing_utils # type: ignore
+
+train_image_count = 800
+test_image_count = 200
+total_image_count = train_image_count + test_image_count
+
+# =============================
+# Functions
+# =============================
+
+def extract_keypoints(results):
+    left_hand = (
+        np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten()
+        if results.left_hand_landmarks else np.zeros(21 * 3)
+    )
+
+    right_hand = (
+        np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten()
+        if results.right_hand_landmarks else np.zeros(21 * 3)
+    )
+
+    return np.concatenate([left_hand, right_hand])
+
+
+def get_next_index(directory):
+    existing = [f for f in os.listdir(directory) if f.endswith('.npy')]
+    if not existing:
         return 0
+    return max(int(f.split('.')[0]) for f in existing) + 1
 
-    return max(int(f.split('.')[0]) for f in existing_files) + 1
 
-def capture_images(letter):
-    class_dir_train = os.path.join(dir_img_train, letter)
-    class_dir_test = os.path.join(dir_img_test, letter)
+def prepare_directories(letter):
+    train_dir = os.path.join(cfg.path_data_train, letter)
+    test_dir = os.path.join(cfg.path_data_test, letter)
+    os.makedirs(train_dir, exist_ok=True)
+    os.makedirs(test_dir, exist_ok=True)
+    return train_dir, test_dir
 
-    os.makedirs(class_dir_train, exist_ok=True)
-    os.makedirs(class_dir_test, exist_ok=True)
+def capture_static_letter(letter):
+    cap = cv2.VideoCapture(0)
+    train_dir, test_dir = prepare_directories(letter)
 
-    print(f'Coletando dados para a letra {letter}')
-    print('Pressione "s" para iniciar a captura.')
+    print(f'Capturando letra {letter}. Pressione "s" para iniciar...')
 
     while True:
         ret, frame = cap.read()
-
         frame = cv2.flip(frame, 1)
-
-        roi = frame[100:300, 425:625]
-        roi_resized = cv2.resize(roi, (image_x, image_y))
-
-        cv2.imshow('ROI', roi_resized)
-
-        if cv2.waitKey(5) == ord('s'):
+        cv2.imshow('Frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('s'):
             break
 
-    train_index = get_next_image_index(class_dir_train)
-    test_index = get_next_image_index(class_dir_test)
+    train_index = get_next_index(train_dir)
+    test_index = get_next_index(test_dir)
 
-    count = 0
+    with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+        count = 0
+        while count < total_image_count:
+            ret, frame = cap.read()
+            frame = cv2.flip(frame, 1)
+            image, results = detection_mediapipe(frame, holistic)
+            draw_styled_landmarks(image, results)
 
-    while count < dataset_size:
-        ret, frame = cap.read()
+            keypoints = extract_keypoints(results)
 
-        frame = cv2.flip(frame, 1)
+            if count < train_image_count:
+                np.save(os.path.join(train_dir, f'{train_index}.npy'), keypoints)
+                train_index += 1
+            else:
+                np.save(os.path.join(test_dir, f'{test_index}.npy'), keypoints)
+                test_index += 1
 
-        roi = frame[100:300, 425:625]
-        roi_resized = cv2.resize(roi, (image_x, image_y))
+            cv2.imshow('Frame', image)
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                break
 
-        cv2.imshow('ROI', roi_resized)
-        cv2.waitKey(25)
+            count += 1
 
-        if count < dataset_train_size:
-            cv2.imwrite(os.path.join(class_dir_train, f'{train_index}.jpg'), roi_resized)
-            train_index += 1
+    print(f'Captura da letra {letter} finalizada. Pressione "n" para continuar.')
+    while True:
+        if cv2.waitKey(1) & 0xFF == ord('n'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+def detection_mediapipe(image, model):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image.setflags(write=False)
+    results = model.process(image)
+    image.setflags(write=True)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    return image, results
+
+
+def draw_styled_landmarks(image, results):
+    mp_drawing.draw_landmarks(
+        image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS,
+        mp_drawing.DrawingSpec(color=(121, 22, 76), thickness=2, circle_radius=4),
+        mp_drawing.DrawingSpec(color=(121, 44, 250), thickness=2, circle_radius=2)
+    )
+
+    mp_drawing.draw_landmarks(
+        image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS,
+        mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=4),
+        mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
+    )
+
+# =============================
+# Execution
+# =============================
+
+if __name__ == "__main__":
+    mode = input('Digite 1 para escolher uma letra ou 2 para capturar todas automaticamente: ')
+    if mode == '1':
+        letter = input(f'Escolha uma letra dentre {cfg.static_letters}: ').upper()
+        if letter in cfg.static_letters:
+            capture_static_letter(letter)
         else:
-            cv2.imwrite(os.path.join(class_dir_test, f'{test_index}.jpg'), roi_resized)
-            test_index += 1
-
-        count += 1
-
-    print(f'Captura para {letter} concluída.')
-    print('Pressione "n" para continuar.')
-
-    while True:
-        if cv2.waitKey(1) == ord('n'):
-            break
-
-
-os.makedirs(dir_img_train, exist_ok=True)
-os.makedirs(dir_img_test, exist_ok=True)
-
-static_letters = [letter for letter in string.ascii_uppercase if letter not in ['H', 'J', 'X', 'Y', 'Z']]
-
-mode = input('Digite 1 para escolher uma letra ou 2 para capturar todas as letras automaticamente: ')
-if mode == '1':
-    letter = input(f'Escolha uma letra dentre {static_letters}: ').upper()
-
-    if letter in static_letters:
-        capture_images(letter)
+            print('Letra inválida.')
+    elif mode == '2':
+        for letter in cfg.static_letters:
+            capture_static_letter(letter)
     else:
-        print('Letra inválida.')
-
-elif mode == '2':
-    for letter in static_letters:
-        capture_images(letter)
-else:
-    print('Opção inválida.')
-
-cap.release()
-cv2.destroyAllWindows()
+        print('Opção inválida.')
