@@ -1,7 +1,7 @@
 import string
 
-path_data_train = 'hand_capture/pre_processed/train/'
-path_data_test = 'hand_capture/pre_processed/test/'
+path_data_train = 'pre_processed/train/'
+path_data_test = 'pre_processed/test/'
 
 
 static_letters = [letter for letter in string.ascii_uppercase if letter not in ['H', 'J', 'X', 'Y', 'Z']]
