@@ -2,25 +2,25 @@
 # Imports
 # =============================
 
-# Built-in modules
-import sys
+# Built-in Modules
 import os
+import sys
 
 # Third-Party Modules
 import cv2
-import mediapipe as mp
 import numpy as np
 
+# Local Modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config as cfg
+import hand_capture.utils as u
 
 # =============================
 # Global Settings
 # =============================
 
-
-mp_holistic = mp.solutions.holistic     # type: ignore
-mp_drawing = mp.solutions.drawing_utils # type: ignore
+mp_holistic = u.mp_holistic
+mp_drawing = u.mp_drawing
 
 train_image_count = 800
 test_image_count = 200
@@ -29,20 +29,6 @@ total_image_count = train_image_count + test_image_count
 # =============================
 # Functions
 # =============================
-
-def extract_keypoints(results):
-    left_hand = (
-        np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten()
-        if results.left_hand_landmarks else np.zeros(21 * 3)
-    )
-
-    right_hand = (
-        np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten()
-        if results.right_hand_landmarks else np.zeros(21 * 3)
-    )
-
-    return np.concatenate([left_hand, right_hand])
-
 
 def get_next_index(directory):
     existing = [f for f in os.listdir(directory) if f.endswith('.npy')]
@@ -79,10 +65,10 @@ def capture_static_letter(letter):
         while count < total_image_count:
             ret, frame = cap.read()
             frame = cv2.flip(frame, 1)
-            image, results = detection_mediapipe(frame, holistic)
-            draw_styled_landmarks(image, results)
+            image, results = u.detection_mediapipe(frame, holistic)
+            u.draw_styled_landmarks(image, results)
 
-            keypoints = extract_keypoints(results)
+            keypoints = u.extract_keypoints(results)
 
             if count < train_image_count:
                 np.save(os.path.join(train_dir, f'{train_index}.npy'), keypoints)
@@ -104,28 +90,6 @@ def capture_static_letter(letter):
 
     cap.release()
     cv2.destroyAllWindows()
-
-def detection_mediapipe(image, model):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image.setflags(write=False)
-    results = model.process(image)
-    image.setflags(write=True)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    return image, results
-
-
-def draw_styled_landmarks(image, results):
-    mp_drawing.draw_landmarks(
-        image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS,
-        mp_drawing.DrawingSpec(color=(121, 22, 76), thickness=2, circle_radius=4),
-        mp_drawing.DrawingSpec(color=(121, 44, 250), thickness=2, circle_radius=2)
-    )
-
-    mp_drawing.draw_landmarks(
-        image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS,
-        mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=4),
-        mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
-    )
 
 # =============================
 # Execution

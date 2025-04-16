@@ -2,24 +2,25 @@
 # Imports
 # =============================
 
-# Built-in modules
-import sys
+# Built-in Modules
 import os
+import sys
 
 # Third-Party Modules
 import cv2
-import mediapipe as mp
 import numpy as np
 
+# Local Modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config as cfg
+import hand_capture.utils as u
 
 # =============================
 # Global Settings
 # =============================
 
-mp_holistic = mp.solutions.holistic     # type: ignore
-mp_drawing = mp.solutions.drawing_utils # type: ignore
+mp_holistic = u.mp_holistic
+mp_drawing = u.mp_drawing
 
 train_video_sequence = 30
 test_video_sequence = 6
@@ -29,48 +30,6 @@ actions = np.array(cfg.dinamic_letters)
 # =============================
 # Functions
 # =============================
-
-def detection_mediapipe(image, model):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image.setflags(write=False)
-    results = model.process(image)
-    image.setflags(write=True)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    return image, results
-
-
-def draw_landmarks(image, results):
-    mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-    mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-
-
-def draw_styled_landmarks(image, results):
-    mp_drawing.draw_landmarks(
-        image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS,
-        mp_drawing.DrawingSpec(color=(121, 22, 76), thickness=2, circle_radius=4),
-        mp_drawing.DrawingSpec(color=(121, 44, 250), thickness=2, circle_radius=2)
-    )
-
-    mp_drawing.draw_landmarks(
-        image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS,
-        mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=4),
-        mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2)
-    )
-
-
-def extract_keypoints(results):
-    left_hand = (
-        np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten()
-        if results.left_hand_landmarks else np.zeros(21 * 3)
-    )
-
-    right_hand = (
-        np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten()
-        if results.right_hand_landmarks else np.zeros(21 * 3)
-    )
-
-    return np.concatenate([left_hand, right_hand])
-
 
 def create_video_folder(letter):
     video_folder_train = os.path.join(cfg.path_data_train, letter)
@@ -103,8 +62,8 @@ def collect_video_data(letter):
         for sequence in range(1, train_video_sequence + 1):
             for frame_num in range(cfg.frame_sequence):
                 ret, frame = cap.read()
-                image, results = detection_mediapipe(frame, holistic)
-                draw_styled_landmarks(image, results)
+                image, results = u.detection_mediapipe(frame, holistic)
+                u.draw_styled_landmarks(image, results)
 
                 if frame_num == 0:
                     cv2.putText(image, 'STARTING COLLECTION - TREINO', (120, 200),
@@ -118,7 +77,7 @@ def collect_video_data(letter):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
                     cv2.imshow('OpenCV Feed', image)
 
-                keypoints = extract_keypoints(results)
+                keypoints = u.extract_keypoints(results)
                 np.save(os.path.join(cfg.path_data_train, letter, str(sequence), str(frame_num)), keypoints)
 
                 if cv2.waitKey(10) & 0xFF == ord('q'):
@@ -127,8 +86,8 @@ def collect_video_data(letter):
         for sequence in range(1, test_video_sequence + 1):
             for frame_num in range(cfg.frame_sequence):
                 ret, frame = cap.read()
-                image, results = detection_mediapipe(frame, holistic)
-                draw_styled_landmarks(image, results)
+                image, results = u.detection_mediapipe(frame, holistic)
+                u.draw_styled_landmarks(image, results)
 
                 if frame_num == 0:
                     cv2.putText(image, 'STARTING COLLECTION - TESTE', (120, 200),
@@ -142,7 +101,7 @@ def collect_video_data(letter):
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
                     cv2.imshow('OpenCV Feed', image)
 
-                keypoints = extract_keypoints(results)
+                keypoints = u.extract_keypoints(results)
                 np.save(os.path.join(cfg.path_data_test, letter, str(sequence), str(frame_num)), keypoints)
 
                 if cv2.waitKey(10) & 0xFF == ord('q'):
