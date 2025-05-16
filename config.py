@@ -1,5 +1,11 @@
 import string
 
+cnn_path_data_train = 'dataset/cnn/train/'
+cnn_path_data_test = 'dataset/cnn/test/'
+
+rnn_path_data_train = 'dataset/rnn/train'
+rnn_path_data_test = 'dataset/rnn/test'
+
 path_data_train = 'pre_processed/train/'
 path_data_test = 'pre_processed/test/'
 
