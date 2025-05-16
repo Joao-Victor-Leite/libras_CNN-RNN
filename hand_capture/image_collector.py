@@ -22,8 +22,8 @@ import hand_capture.utils as u
 mp_holistic = u.mp_holistic
 mp_drawing = u.mp_drawing
 
-train_image_count = 800
-test_image_count = 200
+train_image_count = 400
+test_image_count = 100
 total_image_count = train_image_count + test_image_count
 
 # =============================
@@ -38,8 +38,8 @@ def get_next_index(directory):
 
 
 def prepare_directories(letter):
-    train_dir = os.path.join(cfg.path_data_train, letter)
-    test_dir = os.path.join(cfg.path_data_test, letter)
+    train_dir = os.path.join(cfg.cnn_path_data_train, letter)
+    test_dir = os.path.join(cfg.cnn_path_data_test, letter)
     os.makedirs(train_dir, exist_ok=True)
     os.makedirs(test_dir, exist_ok=True)
     return train_dir, test_dir
