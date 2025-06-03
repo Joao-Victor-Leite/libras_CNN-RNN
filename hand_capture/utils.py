@@ -18,7 +18,7 @@ def detection_mediapipe(image, model):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     return image, results
 
-def extract_keypoints(results):
+def extract_keypoints(results, selected_hand="both"):
     left_hand = (
         np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten()
         if results.left_hand_landmarks else np.zeros(21 * 3)
@@ -29,7 +29,12 @@ def extract_keypoints(results):
         if results.right_hand_landmarks else np.zeros(21 * 3)
     )
 
-    return np.concatenate([left_hand, right_hand])
+    if selected_hand == "left":
+        return left_hand
+    elif selected_hand == "right":
+        return right_hand
+    else:
+        return np.concatenate([left_hand, right_hand])
 
 def draw_styled_landmarks(image, results):
     mp_drawing.draw_landmarks(
