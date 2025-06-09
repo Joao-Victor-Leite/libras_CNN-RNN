@@ -29,12 +29,7 @@ def extract_keypoints(results, selected_hand="both"):
         if results.right_hand_landmarks else np.zeros(21 * 3)
     )
 
-    if selected_hand == "left":
-        return left_hand
-    elif selected_hand == "right":
-        return right_hand
-    else:
-        return np.concatenate([left_hand, right_hand])
+    return np.concatenate([left_hand, right_hand])
 
 def draw_styled_landmarks(image, results):
     mp_drawing.draw_landmarks(

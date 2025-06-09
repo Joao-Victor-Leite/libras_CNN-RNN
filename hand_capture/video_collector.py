@@ -52,12 +52,7 @@ def create_video_folder(letter):
     return dirmax_train, dirmax_test
 
 
-def collect_video_data(letter, hand_choice='both', dirmax_train=0, dirmax_test=0):
-    cap = cv2.VideoCapture(0)
-
-    is_dinamic = letter in cfg.dinamic_letters
-
-def collect_video_data(letter, hand_choice='both', dirmax_train=0, dirmax_test=0):
+def collect_video_data(letter, dirmax_train=0, dirmax_test=0):
     cap = cv2.VideoCapture(0)
     is_dinamic = letter in cfg.dinamic_letters
 
@@ -89,7 +84,7 @@ def collect_video_data(letter, hand_choice='both', dirmax_train=0, dirmax_test=0
                     if frame_num == 0 and is_dinamic:
                         cv2.waitKey(500)
 
-                    keypoints = u.extract_keypoints(results, selected_hand=hand_choice)
+                    keypoints = u.extract_keypoints(results)  # Agora SEM parâmetro de mão
                     save_path = os.path.join(cfg.path_data_train if phase == 'train' else cfg.path_data_test,
                                              letter, str(current_sequence), str(frame_num))
                     np.save(save_path, keypoints)
@@ -107,24 +102,19 @@ def collect_video_data(letter, hand_choice='both', dirmax_train=0, dirmax_test=0
 # Execution
 # =============================
 if __name__ == "__main__":
-    hand_choice = input('Qual mão deseja capturar? (left / right / both): ').strip().lower()
-    if hand_choice not in ['left', 'right', 'both']:
-        print("Escolha inválida. Usando 'both' como padrão.")
-        hand_choice = 'both'
-
     caption_mode = input('Digite 1 para escolher uma letra ou 2 para capturar todas automaticamente: ')
 
     if caption_mode == '1':
         letter = input(f'Escolha uma letra dentre {cfg.static_letters + cfg.dinamic_letters}: ').upper()
         if letter in cfg.static_letters + cfg.dinamic_letters:
             dirmax_train, dirmax_test = create_video_folder(letter)
-            collect_video_data(letter, hand_choice, dirmax_train, dirmax_test)
+            collect_video_data(letter, dirmax_train, dirmax_test)
         else:
             print('Letra inválida.')
 
     elif caption_mode == '2':
         for letter in cfg.static_letters + cfg.dinamic_letters:
             dirmax_train, dirmax_test = create_video_folder(letter)
-            collect_video_data(letter, hand_choice, dirmax_train, dirmax_test)
+            collect_video_data(letter, dirmax_train, dirmax_test)
     else:
         print('Opção inválida.')
