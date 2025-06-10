@@ -8,6 +8,6 @@ static_letters = [letter for letter in string.ascii_uppercase if letter not in [
 dinamic_letters = ['H', 'J', 'X', 'Y', 'Z']
 
 
-train_video_sequence = 80
-test_video_sequence = 20
+train_video_sequence = 40
+test_video_sequence = 10
 frame_sequence = 30
