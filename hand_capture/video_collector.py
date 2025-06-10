@@ -27,6 +27,22 @@ mp_drawing = u.mp_drawing
 # =============================
 
 def create_video_folder(letter):
+    """
+    Cria as pastas necessárias para armazenar os vídeos das sequências de treino e teste para uma letra específica.
+
+    As pastas são criadas dentro dos diretórios configurados em `cfg.path_data_train` e `cfg.path_data_test`.
+    O nome das pastas é o da letra da sequência. Dentro delas, são criadas subpastas numeradas para as sequências de vídeo,
+    começando a partir do maior número já existente na pasta.
+
+    Args:
+        letter (str): Letra para a qual as pastas de vídeo serão criadas.
+
+    Returns:
+        tuple: (dirmax_train, dirmax_test)
+            - dirmax_train (int): Maior índice de sequência já existente na pasta de treino para a letra.
+            - dirmax_test (int): Maior índice de sequência já existente na pasta de teste para a letra.
+    """
+
     video_folder_train = os.path.join(cfg.path_data_train, letter)
     video_folder_test = os.path.join(cfg.path_data_test, letter)
 
@@ -53,6 +69,22 @@ def create_video_folder(letter):
 
 
 def collect_video_data(letter, dirmax_train=0, dirmax_test=0):
+    """
+    Coleta dados de vídeo da webcam para uma letra específica, salvando as sequências de keypoints detectados pelo MediaPipe.
+
+    Para cada sequência de treino e teste, captura múltiplos frames, processa com o modelo MediaPipe Holistic,
+    desenha os landmarks estilizados na imagem e salva os keypoints extraídos.
+
+    Args:
+        letter (str): Letra para a qual os dados serão coletados.
+        dirmax_train (int, opcional): Índice inicial para as sequências de treino (default: 0).
+        dirmax_test (int, opcional): Índice inicial para as sequências de teste (default: 0).
+
+    Observações:
+        - Pressione 'q' para interromper a coleta e fechar a janela da câmera.
+        - Letra dinâmica (presente em cfg.dinamic_letters) faz a função aguardar 500ms antes de iniciar a captura da sequência.
+    """
+    
     cap = cv2.VideoCapture(0)
     is_dinamic = letter in cfg.dinamic_letters
 
