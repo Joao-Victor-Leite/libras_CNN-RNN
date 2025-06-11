@@ -116,7 +116,7 @@ def collect_video_data(letter, dirmax_train=0, dirmax_test=0):
                     if frame_num == 0 and is_dinamic:
                         cv2.waitKey(500)
 
-                    keypoints = u.extract_keypoints(results)  # Agora SEM parâmetro de mão
+                    keypoints = u.extract_keypoints(results)
                     save_path = os.path.join(cfg.path_data_train if phase == 'train' else cfg.path_data_test,
                                              letter, str(current_sequence), str(frame_num))
                     np.save(save_path, keypoints)
