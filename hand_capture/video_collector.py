@@ -4,6 +4,7 @@
 
 # Built-in Modules
 import os
+import string
 import sys
 
 # Third-Party Modules
@@ -137,7 +138,7 @@ if __name__ == "__main__":
     caption_mode = input('Digite 1 para escolher uma letra ou 2 para capturar todas automaticamente: ')
 
     if caption_mode == '1':
-        letter = input(f'Escolha uma letra dentre {cfg.static_letters + cfg.dinamic_letters}: ').upper()
+        letter = input(f"Escolha uma letra dentre - {' '.join(string.ascii_uppercase)}: ").upper()
         if letter in cfg.static_letters + cfg.dinamic_letters:
             dirmax_train, dirmax_test = create_video_folder(letter)
             collect_video_data(letter, dirmax_train, dirmax_test)
@@ -145,7 +146,7 @@ if __name__ == "__main__":
             print('Letra inválida.')
 
     elif caption_mode == '2':
-        for letter in cfg.static_letters + cfg.dinamic_letters:
+        for letter in string.ascii_uppercase:
             dirmax_train, dirmax_test = create_video_folder(letter)
             collect_video_data(letter, dirmax_train, dirmax_test)
     else:
