@@ -9,8 +9,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'h
 from utils import extract_keypoints, draw_styled_landmarks, detection_mediapipe
 
 labels_dict = {
-    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G',
-    7: 'I', 8: 'O', 9: 'P', 10: 'U'
+    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E',
+    5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J',
+    10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O',
+    15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T',
+    20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'Z'
 }
 
 sequence_length = 30
