@@ -12,13 +12,23 @@ import numpy as np
 # Configurações
 # =============================
 
-base_dir = "dataset/lstm/train/O/1"  # Caminho da sequência a ser exibida, atualize conforme o caminho do teu projeto
-frame_total = 30                     # Quantidade de frames por sequência
-expected_shape = (126,)             # Esperado: 2 mãos com 21 landmarks e 3 coordenadas cada (42x3)
+base_dir = "dataset/lstm/train/O/1"     # Caminho da sequência a ser exibida, atualize conforme o caminho do teu projeto
+frame_total = 30                        # Quantidade de frames por sequência
+expected_shape = (126,)                 # Esperado: 2 mãos com 21 landmarks e 3 coordenadas cada (42x3)
 
 # =============================
 # Execução
 # =============================
+
+"""
+- Percorre todos os frames de 0 a `frame_total - 1`.
+   - Para cada frame:
+     - Tenta carregar o arquivo `.npy` correspondente.
+     - Se o arquivo estiver presente e no formato esperado:
+       - Os dados são reorganizados em (42, 3), sendo os 21 primeiros pontos da mão direita e os 21 seguintes da mão esquerda.
+       - Os landmarks de ambas as mãos são exibidos lado a lado, indicando coordenadas X, Y, Z ou “Não detectado” se todos os valores forem zero.
+     - Se o arquivo estiver ausente ou tiver formato diferente do esperado, é exibida uma mensagem de erro.
+"""
 
 for frame_num in range(frame_total):
     file_path = os.path.join(base_dir, f"{frame_num}.npy")
