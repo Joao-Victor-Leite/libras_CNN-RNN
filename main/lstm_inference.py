@@ -37,30 +37,6 @@ MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models')
 model = None
 
 # =============================
-# Functions
-# =============================
-
-def prob_viz(res, actions, input_frame, colors):
-    """
-    Visualiza as probabilidades de predição no vídeo usando barras coloridas.
-
-    Args:
-        res (list): Lista de probabilidades retornadas pelo modelo.
-        actions (dict): Dicionário de rótulos.
-        input_frame (np.ndarray): Quadro da imagem de entrada.
-        colors (list): Lista de cores para as barras.
-
-    Returns:
-        np.ndarray: Quadro com as barras de probabilidade desenhadas.
-    """
-    output_frame = input_frame.copy()
-    for num, prob in enumerate(res):
-        cv2.rectangle(output_frame, (0, 60 + num * 40), (int(prob * 100), 90 + num * 40), colors[num], -1)
-        cv2.putText(output_frame, actions[num], (0, 85 + num * 40), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-    return output_frame
-
-# =============================
 # Model Loading
 # =============================
 
@@ -138,8 +114,6 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
             if len(sentence) > 5:
                 sentence = sentence[-5:]
-
-            image = prob_viz(res, labels_dict, image, colors)
 
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
         cv2.putText(image, ' '.join(sentence), (3, 30),
