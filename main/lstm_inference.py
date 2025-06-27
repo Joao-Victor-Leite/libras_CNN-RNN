@@ -80,8 +80,8 @@ while True:
 # =============================
 
 sequence = []
-sentence = []
 predictions = []
+current_letter = ''
 
 cap = cv2.VideoCapture(0)
 
@@ -101,22 +101,19 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         if len(sequence) == sequence_length:
             res = model.predict(np.expand_dims(sequence, axis=0))[0]
-            print(labels_dict[np.argmax(res)])
-            predictions.append(np.argmax(res))
+            prediction = np.argmax(res)
+            predictions.append(prediction)
 
-            if np.unique(predictions[-10:])[0] == np.argmax(res):
-                if res[np.argmax(res)] > threshold:
-                    if len(sentence) > 0:
-                        if labels_dict[np.argmax(res)] != sentence[-1]:
-                            sentence.append(labels_dict[np.argmax(res)])
-                    else:
-                        sentence.append(labels_dict[np.argmax(res)])
-
-            if len(sentence) > 5:
-                sentence = sentence[-5:]
+            if np.unique(predictions[-10:])[0] == prediction:
+                if res[prediction] > threshold:
+                    current_letter = labels_dict[prediction]
+                else:
+                    current_letter = ''
+        else:
+            current_letter = ''
 
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
-        cv2.putText(image, ' '.join(sentence), (3, 30),
+        cv2.putText(image, current_letter, (3, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         cv2.imshow('OpenCV Feed', image)
