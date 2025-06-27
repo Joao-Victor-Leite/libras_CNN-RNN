@@ -1,25 +1,34 @@
+import sys
 import os
 import cv2
 import mediapipe as mp
 import numpy as np
 from tensorflow.keras.models import load_model
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'hand_capture')))
+from utils import extract_keypoints, draw_styled_landmarks, detection_mediapipe
+
 labels_dict = {
-    0: 'A', 1: 'B', 2: 'C', 3: 'I', 4: 'O',
-}
-"""
-labels_dict = {
-    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G',
-    7: 'H', 8: 'I', 9: 'J', 10: 'K', 11: 'L', 12: 'M', 13: 'N',
-    14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T',
+    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E',
+    5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J',
+    10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O',
+    15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T',
     20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'Z'
 }
-"""
 
 sequence_length = 30
-
+mp_holistic = mp.solutions.holistic
 MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models'))
 model = None
+
+colors = [(245,117,16), (117,245,16), (16,117,245)]
+def prob_viz(res, actions, input_frame, colors):
+    output_frame = input_frame.copy()
+    for num, prob in enumerate(res):
+        cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), colors[num], -1)
+        cv2.putText(output_frame, actions[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+        
+    return output_frame
 
 if not os.path.exists(MODEL_DIR):
     print(f"Diretório não encontrado: {MODEL_DIR}")
@@ -52,101 +61,60 @@ else:
             break
         except ValueError:
             print("Por favor, digite um número válido.")
-
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
+            
+            
+sequence = []
+sentence = []
+predictions = []
+threshold = 0.5
 
 cap = cv2.VideoCapture(0)
-sequence = []
 
-while True:
-    data_aux = []
-    x_ = []
-    y_ = []
-    z_ = []
+with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+    while cap.isOpened():
 
-    ret, frame = cap.read()
-    if not ret:
-        print("Não conseguiu ler frame da câmera!")
-        break
+        ret, frame = cap.read()
 
-    H, W, _ = frame.shape
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(frame_rgb)
+        if not ret or frame is None:
+            print("Não conseguiu ler frame da câmera!")
+            break
 
-    if results.multi_hand_landmarks:
-        all_hands = results.multi_hand_landmarks
-        for hand_idx in range(2):
-            if hand_idx < len(all_hands):
-                hand_landmarks = all_hands[hand_idx]
-                x_, y_, z_ = [], [], []
-                for i in range(21):
-                    x = hand_landmarks.landmark[i].x
-                    y = hand_landmarks.landmark[i].y
-                    z = hand_landmarks.landmark[i].z
-                    x_.append(x)
-                    y_.append(y)
-                    z_.append(z)
-                for i in range(21):
-                    data_aux.append(x_[i] - min(x_))
-                    data_aux.append(y_[i] - min(y_))
-                    data_aux.append(z_[i] - min(z_))
-            else:
-                data_aux.extend([0.0] * (21 * 3))
+        image, results = detection_mediapipe(frame, holistic)
 
-        for hand_landmarks in all_hands:
-            mp_drawing.draw_landmarks(
-                frame,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style()
-            )
+        draw_styled_landmarks(image, results)
+        
+        keypoints = extract_keypoints(results)
+        sequence.append(keypoints)
+        sequence = sequence[-30:]
 
-        sequence.append(data_aux)
-        sequence = sequence[-sequence_length:]
+        if len(sequence) == 30:
+            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+            print(labels_dict[np.argmax(res)])
+            predictions.append(np.argmax(res))
+            
+            
+            if np.unique(predictions[-10:])[0]==np.argmax(res): 
+                if res[np.argmax(res)] > threshold: 
+                    
+                    if len(sentence) > 0: 
+                        if labels_dict[np.argmax(res)] != sentence[-1]:
+                            sentence.append(labels_dict[np.argmax(res)])
+                    else:
+                        sentence.append(labels_dict[np.argmax(res)])
 
-        print("data_aux length:", len(data_aux))
-        print("sequence length:", len(sequence))
+            if len(sentence) > 5: 
+                sentence = sentence[-5:]
 
-        if len(sequence) == sequence_length:
-            try:
-                input_lstm = np.array(sequence)[np.newaxis, ...]
-                print("Enviado na inferência:", input_lstm.shape)
-                res = model.predict(input_lstm, verbose=0)[0]
+            image = prob_viz(res, labels_dict, image, colors)
+            
+        cv2.rectangle(image, (0,0), (640, 40), (245, 117, 16), -1)
+        cv2.putText(image, ' '.join(sentence), (3,30), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        cv2.imshow('OpenCV Feed', image)
 
-                pred_idx = int(np.argmax(res))
-                predicted_character = labels_dict[pred_idx]
-                prob = res[pred_idx]
-
-                if len(all_hands) > 0:
-                    hand_landmarks = all_hands[0]
-                    x_vals = [lm.x for lm in hand_landmarks.landmark]
-                    y_vals = [lm.y for lm in hand_landmarks.landmark]
-                    x1 = int(min(x_vals) * W) - 10
-                    y1 = int(min(y_vals) * H) - 10
-                    x2 = int(max(x_vals) * W) + 10
-                    y2 = int(max(y_vals) * H) + 10
-
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 0), 4)
-                    cv2.putText(
-                        frame, f"{predicted_character} ({prob:.2f})",
-                        (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3, cv2.LINE_AA
-                    )
-            except Exception as e:
-                print("ERRO DURANTE PREDIÇÃO:", e)
-                print("Esperado pelo modelo:", model.input_shape)
-                break
-
-    else:
-        sequence = []
-
-    cv2.imshow('frame', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+        if cv2.waitKey(10) & 0xFF == ord('q'):
+            break
+        
+    cap.release()
+    cv2.destroyAllWindows()
