@@ -11,8 +11,7 @@
 
 ## (Demonstração)
 
-![Demonstração do Projeto](https://path.to/your/demo.gif)
-*Substitua o GIF acima por uma demonstração do seu projeto em ação.*
+![Demonstração do Projeto](video_demonstracao.gif)
 
 ---
 
@@ -28,9 +27,7 @@
   - [1. Coleta de Dados](#1-coleta-de-dados)
   - [2. Treinamento do Modelo](#2-treinamento-do-modelo)
   - [3. Inferência em Tempo Real](#3-inferência-em-tempo-real)
-- [Contribuição](#-contribuição)
 - [Licença](#-licença)
-- [Contato](#-contato)
 
 ---
 
@@ -151,9 +148,3 @@ python main/lstm_inference.py
 Distribuído sob a Licença MIT. Veja `LICENSE` para mais informações.
 
 ---
-
-## 📧 Contato
-
-João Victor Leite - LinkedIn - seu.email@exemplo.com
-
-Link do Projeto: https://github.com/Joao-Victor-Leite/libras_CNN-RNN
